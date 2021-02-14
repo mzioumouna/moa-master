@@ -65,7 +65,7 @@ public class EFDTRegression extends VFDT implements Regressor {
 
 
     //endregion ================ OPTIONS ================
-    public interface EFDTRNode{
+    public interface EFDTRNode {
         boolean isRoot();
         public void filterInstanceToLeaves(Instance inst, EFDTRSplitNode mygressionparent, int parentBranch, List<FoundNode> foundNodes, boolean updateSplitterCounts);
 
