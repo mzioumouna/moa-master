@@ -13,7 +13,7 @@ import moa.core.AutoExpandVector;
 
 import java.util.*;
 
-public class EFDTRegression extends HoeffdingRegressionTree {
+public class EFDTR extends HoeffdingRegressionTree {
     protected int numInstances = 0;
 
     protected int splitCount=0;
@@ -24,12 +24,13 @@ public class EFDTRegression extends HoeffdingRegressionTree {
             "The number of instances an internal node should observe between re-evaluation attempts.",
             2000, 0, Integer.MAX_VALUE);
 
+
     public interface EFDTReg {
 
         public boolean isRoot();
         public void setRoot(boolean isRoot);
 
-        public void learnFromInstance(Instance inst, EFDTRegression ht, EFDTsplitNodeForRegression parent, int parentBranch);
+        public void learnFromInstance(Instance inst, EFDTR ht, EFDTsplitNodeForRegression parent, int parentBranch);
         public void setParent(EFDTsplitNodeForRegression parent);
 
         public EFDTsplitNodeForRegression getParent();
@@ -78,7 +79,7 @@ public class EFDTRegression extends HoeffdingRegressionTree {
             }
         }
 
-        public AttributeSplitSuggestion[] getBestSplitSuggestions(SplitCriterion criterion, EFDTRegression ht) {
+        public AttributeSplitSuggestion[] getBestSplitSuggestions(SplitCriterion criterion, EFDTR ht) {
             List<AttributeSplitSuggestion> bestSuggestions = new LinkedList<AttributeSplitSuggestion>();
             double[] preSplitDist = this.observedClassDistribution.getArrayCopy();
             if (!ht.noPrePruneOption.isSet()) {
@@ -99,11 +100,16 @@ public class EFDTRegression extends HoeffdingRegressionTree {
             }
             return bestSuggestions.toArray(new AttributeSplitSuggestion[bestSuggestions.size()]);
         }
-        public void learnFromInstance(Instance inst, EFDTRegression ht, EFDTsplitNodeForRegression parent, int parentBranch) {
+        public void learnFromInstance(Instance inst, EFDTR ht, EFDTsplitNodeForRegression parent, int parentBranch) {
             nodeTime++;
             //// Update node statistics and class distribution
+            this.observedClassDistribution.addToValue(0,
+                    inst.weight());
+            this.observedClassDistribution.addToValue(1,
+                    inst.weight() * inst.classValue());
+            this.observedClassDistribution.addToValue(2,
+                    inst.weight() * inst.classValue() * inst.classValue());
 
-            this.observedClassDistribution.addToValue((int) inst.classValue(), inst.weight()); // update prior (predictor)
 
             for (int i = 0; i < inst.numAttributes() - 1; i++) { //update likelihood
                 int instAttIndex = modelAttIndexToInstanceAttIndex(i, inst);
@@ -128,7 +134,7 @@ public class EFDTRegression extends HoeffdingRegressionTree {
             }
         }
 
-        protected void reEvaluateBestSplit(EFDTsplitNodeForRegression node, EFDTsplitNodeForRegression parent, int parentIndex){
+       protected void reEvaluateBestSplit(EFDTsplitNodeForRegression node, EFDTsplitNodeForRegression parent, int parentIndex){
             node.addToSplitAttempts(1);
             int currentSplit = -1;
             if(this.splitTest != null){
@@ -137,12 +143,12 @@ public class EFDTRegression extends HoeffdingRegressionTree {
             } else{ // there is no split, split is null
                 currentSplit = -1;
             }
-            SplitCriterion splitCriterion = (SplitCriterion) getPreparedClassOption(EFDTRegression.this.splitCriterionOption);
+            SplitCriterion splitCriterion = (SplitCriterion) getPreparedClassOption(EFDTR.this.splitCriterionOption);
             double hoeffdingBound = computeHoeffdingBound(splitCriterion.getRangeOfMerit(node.getClassDistributionAtTimeOfCreation()),
-                    EFDTRegression.this.splitConfidenceOption.getValue(), node.observedClassDistribution.sumOfValues());
+                    EFDTR.this.splitConfidenceOption.getValue(), node.observedClassDistribution.sumOfValues());
 
             // get best split suggestions
-            AttributeSplitSuggestion[] bestSplitSuggestions = node.getBestSplitSuggestions(splitCriterion, EFDTRegression.this);
+            AttributeSplitSuggestion[] bestSplitSuggestions = node.getBestSplitSuggestions(splitCriterion, EFDTR.this);
             Arrays.sort(bestSplitSuggestions);
             Set<Integer> poorAtts = new HashSet<Integer>();
             AttributeSplitSuggestion bestSuggestion = bestSplitSuggestions[bestSplitSuggestions.length - 1];
@@ -183,7 +189,7 @@ public class EFDTRegression extends HoeffdingRegressionTree {
                 currentAverageMerit = node.getVarianceRatiosum().get(node.splitTest.getAttsTestDependsOn()[0])/node.getNumSplitAttempts();
             }
 
-            double tieThreshold =EFDTRegression.this.tieThresholdOption.getValue();
+            double tieThreshold =EFDTR.this.tieThresholdOption.getValue();
 
             // compute the average deltaG
             double deltaG = bestSuggestionAverageMerit - currentAverageMerit;
@@ -198,7 +204,7 @@ public class EFDTRegression extends HoeffdingRegressionTree {
                 // if null split wins
                 if(splitDecision.splitTest == null){
 
-                    node.killSubtree(EFDTRegression.this);
+                    node.killSubtree(EFDTR.this);
                     EFDTRLearningNode replacement = (EFDTRLearningNode)newLearningNode();
                     replacement.setVarianceRatiosum(node.getVarianceRatiosum()); // transfer varianceratio history, split to replacement leaf
                     if(node.getParent() != null){
@@ -231,7 +237,7 @@ public class EFDTRegression extends HoeffdingRegressionTree {
 
                         // otherwise, torch the subtree and split on the new best attribute.
 
-                        this.killSubtree(EFDTRegression.this);
+                        this.killSubtree(EFDTR.this);
 
                         for (int i = 0; i < splitDecision.numSplits(); i++) {
 
@@ -248,9 +254,9 @@ public class EFDTRegression extends HoeffdingRegressionTree {
                             ((EFDTsplitNodeForRegression)newSplit).setChild(i, newChild);
                         }
 
-                        EFDTRegression.this.activeLeafNodeCount--;
-                        EFDTRegression.this.decisionNodeCount++;
-                        EFDTRegression.this.activeLeafNodeCount += splitDecision.numSplits();
+                        EFDTR.this.activeLeafNodeCount--;
+                        EFDTR.this.decisionNodeCount++;
+                        EFDTR.this.activeLeafNodeCount += splitDecision.numSplits();
 
                     }
 
@@ -258,7 +264,7 @@ public class EFDTRegression extends HoeffdingRegressionTree {
                     if (parent == null) {
                         ((EFDTReg)newSplit).setRoot(true);
                         ((EFDTReg)newSplit).setParent(null);
-                        EFDTRegression.this.treeRoot = newSplit;
+                        EFDTR.this.treeRoot = newSplit;
                     } else {
                         ((EFDTReg)newSplit).setRoot(false);
                         ((EFDTReg)newSplit).setParent(parent);
@@ -270,9 +276,9 @@ public class EFDTRegression extends HoeffdingRegressionTree {
 
 
         }
-        public EFDTsplitNodeForRegression getParent() {
-            return this.parent;
-        }
+     public EFDTsplitNodeForRegression getParent() {
+         return this.parent;
+     }
 
         public void setParent(EFDTsplitNodeForRegression parent) {
             this.parent = parent;
@@ -299,12 +305,12 @@ public class EFDTRegression extends HoeffdingRegressionTree {
         public void setRoot(boolean isRoot) {
 
         }
-        public void learnFromInstance(Instance inst, EFDTRegression ht) {
+        public void learnFromInstance(Instance inst, HoeffdingRegressionTree ht) {
             super.learnFromInstance(inst, ht);
 
         }
 
-        public void learnFromInstance(Instance inst, EFDTRegression ht, EFDTsplitNodeForRegression parent, int parentBranch) {
+        public void learnFromInstance(Instance inst, EFDTR ht, EFDTsplitNodeForRegression parent, int parentBranch) {
             learnFromInstance(inst, ht);
 
             if (ht.growthAllowed
@@ -327,6 +333,8 @@ public class EFDTRegression extends HoeffdingRegressionTree {
             return this.parent;
         }
     }
+
+
     //endregion ================ CLASSES ================
     protected void attemptToSplit(ActiveLearningNodeForRegression node, EFDTsplitNodeForRegression parent, int parentIndex) {
         if (!node.observedClassDistributionIsPure()) {

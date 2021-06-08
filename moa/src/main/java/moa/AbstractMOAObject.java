@@ -22,6 +22,8 @@ package moa;
 import moa.core.SerializeUtils;
 import moa.core.SizeOf;
 
+import java.util.Map;
+
 /**
  * Abstract MOA Object. All classes that are serializable, copiable,
  * can measure its size, and can give a description, extend this class.
@@ -76,4 +78,7 @@ public abstract class AbstractMOAObject implements MOAObject {
     public static int measureByteSize(MOAObject obj) {
         return (int) SizeOf.fullSizeOf(obj);
     }
+
+
+
 }

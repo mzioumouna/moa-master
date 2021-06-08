@@ -19,12 +19,8 @@
  */
 package moa.classifiers.trees;
 
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+
 import com.github.javacliparser.FlagOption;
 import com.github.javacliparser.FloatOption;
 import com.github.javacliparser.IntOption;
@@ -179,6 +175,12 @@ public FlagOption binarySplitsOption = new FlagOption("binarySplits", 'b',
     }
 
     public static class Node extends AbstractMOAObject {
+        protected int nodeTime;
+        private int numSplitAttempts = 0;
+        private HashMap<Integer, Double> VarianceRatiosum;
+        protected DoubleVector classDistributionAtTimeOfCreation;
+
+        protected List<Integer> usedNominalAttributes = new ArrayList<Integer>();
 
         private static final long serialVersionUID = 1L;
 
@@ -186,6 +188,9 @@ public FlagOption binarySplitsOption = new FlagOption("binarySplits", 'b',
 
         public Node(double[] classObservations) {
             this.observedClassDistribution = new DoubleVector(classObservations);
+            this.VarianceRatiosum = new HashMap<Integer, Double>();
+            this.VarianceRatiosum.put(-1, 0.0); // Initialize for null split
+            this.classDistributionAtTimeOfCreation = new DoubleVector(classObservations);
         }
 
         public int calcByteSize() {
@@ -216,6 +221,21 @@ public FlagOption binarySplitsOption = new FlagOption("binarySplits", 'b',
         public boolean observedClassDistributionIsPure() {
             return this.observedClassDistribution.numNonZeroEntries() < 2;
         }
+        public HashMap<Integer, Double> getVarianceRatiosum() {
+            return VarianceRatiosum ;
+        }
+        public void setVarianceRatiosum(HashMap<Integer, Double> igs) {
+            VarianceRatiosum = igs;
+        }
+
+
+        public int getNumSplitAttempts(){
+            return numSplitAttempts;
+        }
+
+        public void addToSplitAttempts(int i){
+            numSplitAttempts += i;
+        }
 
         public void describeSubtree(HoeffdingTree ht, StringBuilder out,
                 int indent) {
@@ -238,6 +258,11 @@ public FlagOption binarySplitsOption = new FlagOption("binarySplits", 'b',
             return totalSeen > 0.0 ? (totalSeen - this.observedClassDistribution.getValue(this.observedClassDistribution.maxIndex()))
                     : 0.0;
         }
+
+        public double[] getClassDistributionAtTimeOfCreation() {
+            return this.classDistributionAtTimeOfCreation.getArrayCopy();
+        }
+
 
         @Override
         public void getDescription(StringBuilder sb, int indent) {

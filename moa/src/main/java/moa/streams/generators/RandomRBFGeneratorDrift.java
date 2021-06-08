@@ -32,7 +32,7 @@ import com.yahoo.labs.samoa.instances.Instance;
  * @author Albert Bifet (abifet at cs dot waikato dot ac dot nz)
  * @version $Revision: 7 $
  */
-public class RandomRBFGeneratorDrift extends RandomRBFGenerator {
+public class RandomRBFGeneratorDrift extends RandomRBFGeneratorForRegression {
 
     @Override
     public String getPurposeString() {
@@ -46,7 +46,6 @@ public class RandomRBFGeneratorDrift extends RandomRBFGenerator {
 
     public IntOption numDriftCentroidsOption = new IntOption("numDriftCentroids", 'k',
             "The number of centroids with drift.", 50, 0, Integer.MAX_VALUE);
-
     protected double[][] speedCentroids;
 
     @Override
@@ -71,6 +70,7 @@ public class RandomRBFGeneratorDrift extends RandomRBFGenerator {
         }
         return super.nextInstance();
     }
+
 
     @Override
     protected void generateCentroids() {

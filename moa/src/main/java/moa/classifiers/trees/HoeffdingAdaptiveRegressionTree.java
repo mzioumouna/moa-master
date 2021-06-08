@@ -512,10 +512,10 @@ public class HoeffdingAdaptiveRegressionTree extends HoeffdingRegressionTree {
                     }
                     double[] dist = leafNode.getClassVotes(inst, this);
                     //Albert: changed for weights
-                    double distSum = Utils.sum(dist);
-                    if (distSum > 0.0) {
-                    	Utils.normalize(dist, distSum);
-                    }
+                    //double distSum = Utils.sum(dist);
+                    //if (distSum > 0.0) {
+                    //	Utils.normalize(dist, distSum);
+                    //}
                     result.addValues(dist);
                     //predictionPaths++;
                 }
@@ -538,4 +538,3 @@ public class HoeffdingAdaptiveRegressionTree extends HoeffdingRegressionTree {
     }
 
 }
-

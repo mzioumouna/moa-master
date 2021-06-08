@@ -95,6 +95,7 @@ public class HyperplaneGeneratorForRegression extends HyperplaneGenerator {
         return new InstanceExample(inst);
     }
 
+
     private void addDrift() {
         for (int i = 0; i < this.numDriftAttsOption.getValue(); i++) {
             this.weights[i] += (double) ((double) sigma[i]) * ((double) this.magChangeOption.getValue());
